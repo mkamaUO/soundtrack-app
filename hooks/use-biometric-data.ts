@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useData } from '@/contexts/DataContext'
 
 interface EEGChannel {
   voltageValue: number
@@ -102,40 +103,31 @@ interface BiometricData {
 }
 
 export function useBiometricData() {
+  const { biometricData: contextBiometricData, isLoading: contextLoading } = useData()
   const [data, setData] = useState<BiometricData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchBiometricData = async () => {
+    // Only process when context data is available
+    if (!contextLoading && contextBiometricData) {
       try {
-        setLoading(true)
-        setError(null)
-        
-        const response = await fetch('/api/biometric')
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+        // Check if context biometric data has the expected structure
+        if (Array.isArray(contextBiometricData) && contextBiometricData.length > 0) {
+          // Cast to BiometricRecord[] type and transform
+          const transformedData = transformBiometricData(contextBiometricData as any[])
+          setData(transformedData)
+        } else {
+          // No biometric data available
+          setData(null)
         }
-        
-        const result = await response.json()
-        console.log('Fetched biometric data:', result)
-        
-        // Transform the raw API data into chart-friendly format
-        const transformedData = transformBiometricData(result)
-        setData(transformedData)
       } catch (err) {
-        console.error('Error fetching biometric data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to fetch biometric data')
-      } finally {
-        setLoading(false)
+        console.error('Error transforming biometric data:', err)
+        setError(err instanceof Error ? err.message : 'Failed to transform biometric data')
       }
     }
+  }, [contextBiometricData, contextLoading])
 
-    fetchBiometricData()
-  }, [])
-
-  return { data, loading, error }
+  return { data, loading: contextLoading, error }
 }
 
 function transformBiometricData(rawData: BiometricRecord[]): BiometricData {

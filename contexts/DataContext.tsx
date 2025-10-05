@@ -65,7 +65,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Fetch media and biometrics in parallel
       const [mediaResponse, biometricResponse] = await Promise.all([
         fetch("https://htv2025-production.up.railway.app/api/media/ordered/created-at"),
-        fetch("https://htv2025-production.up.railway.app/api/biometric/all").catch(() => null),
+        fetch("https://htv2025-production.up.railway.app/api/biometric/").catch(() => null),
       ])
 
       if (!mediaResponse.ok) {
