@@ -28,7 +28,7 @@ export default function HomePage() {
             <span className="text-sm font-medium text-primary">Your Personal Music Journey</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-balance leading-tight">
-            <span className="text-gradient">Soundtrack</span>
+            <span className="text-gradient">SoundTrack</span>
             <br />
             <span className="text-foreground">to Your Life</span>
           </h1>
@@ -50,7 +50,7 @@ export default function HomePage() {
             <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mb-5 group-hover:glow-primary transition-all">
               <ClipboardList className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-gradient transition-all">Daily Check-In</h3>
+            <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-gradient transition-all">Calibration</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Answer questions about your day, activities, and how you're feeling
             </p>

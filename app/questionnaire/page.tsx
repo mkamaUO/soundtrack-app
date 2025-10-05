@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -8,11 +9,53 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Loader2 } from "lucide-react"
+
+const questions = [
+  "You want to lock-in on your homework.",
+  "You got back your exam mark and it was lower than expected.",
+  "You're hitting the gym.",
+  "You just wrapped up a stressful job interview.",
+  "You just received a job offer from a company you really like.",
+]
 
 export default function QuestionnairePage() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
-  const totalSteps = 4
+  const [answers, setAnswers] = useState<Record<number, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const totalSteps = 5
+
+  const handleComplete = async () => {
+    setIsSubmitting(true)
+    try {
+      // Format the answers as qa_pairs
+      const qa_pairs = questions.map((question, index) => ({
+        question,
+        answer: answers[index + 1] || "",
+      }))
+
+      const response = await fetch("https://htv2025-production.up.railway.app/api/questionnaire/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ qa_pairs }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to submit questionnaire")
+      }
+
+      // Redirect to playlist page on success
+      router.push("/playlist")
+    } catch (error) {
+      console.error("Error submitting questionnaire:", error)
+      alert("Failed to submit questionnaire. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,8 +63,8 @@ export default function QuestionnairePage() {
       <main className="container mx-auto px-4 pt-20 pb-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Daily Check-In</h1>
-            <p className="text-muted-foreground">Help us understand your day</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Calibration</h1>
+            <p className="text-muted-foreground">Imagine you are in the following scenario. What kind of music would you want to listen to?</p>
             <div className="flex gap-2 mt-4">
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? "bg-primary" : "bg-muted"}`} />
@@ -33,36 +76,30 @@ export default function QuestionnairePage() {
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">How are you feeling today?</Label>
-                  <RadioGroup defaultValue="good">
+                  <Label className="text-base font-semibold mb-4 block">You want to lock-in on your homework.</Label>
+                  <RadioGroup value={answers[1]} onValueChange={(value) => setAnswers({ ...answers, 1: value })}>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="great" id="great" />
-                      <Label htmlFor="great" className="flex-1 cursor-pointer">
-                        Great - Full of energy
+                      <RadioGroupItem value="lofi" id="lofi" />
+                      <Label htmlFor="lofi" className="flex-1 cursor-pointer">
+                        🎧 Lo-fi beats or instrumental chillhop
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="good" id="good" />
-                      <Label htmlFor="good" className="flex-1 cursor-pointer">
-                        Good - Feeling positive
+                      <RadioGroupItem value="classical" id="classical" />
+                      <Label htmlFor="classical" className="flex-1 cursor-pointer">
+                        🎻 Classical or piano music
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="okay" id="okay" />
-                      <Label htmlFor="okay" className="flex-1 cursor-pointer">
-                        Okay - Neutral
+                      <RadioGroupItem value="ambient" id="ambient" />
+                      <Label htmlFor="ambient" className="flex-1 cursor-pointer">
+                        🎶 Ambient or focus-enhancing electronic
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="tired" id="tired" />
-                      <Label htmlFor="tired" className="flex-1 cursor-pointer">
-                        Tired - Low energy
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="stressed" id="stressed" />
-                      <Label htmlFor="stressed" className="flex-1 cursor-pointer">
-                        Stressed - Overwhelmed
+                      <RadioGroupItem value="silence" id="silence" />
+                      <Label htmlFor="silence" className="flex-1 cursor-pointer">
+                        🔇 Silence or white noise (no music)
                       </Label>
                     </div>
                   </RadioGroup>
@@ -73,16 +110,33 @@ export default function QuestionnairePage() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">What activities did you do today?</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {["Work", "Exercise", "Social", "Creative", "Rest", "Learning", "Outdoor", "Other"].map(
-                      (activity) => (
-                        <Button key={activity} variant="outline" className="justify-start h-auto py-3 bg-transparent">
-                          {activity}
-                        </Button>
-                      ),
-                    )}
-                  </div>
+                  <Label className="text-base font-semibold mb-4 block">You got back your exam mark and it was lower than expected.</Label>
+                  <RadioGroup value={answers[2]} onValueChange={(value) => setAnswers({ ...answers, 2: value })}>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="sad" id="sad" />
+                      <Label htmlFor="sad" className="flex-1 cursor-pointer">
+                        😔 Sad indie or acoustic to match the mood
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="emo" id="emo" />
+                      <Label htmlFor="emo" className="flex-1 cursor-pointer">
+                        🎸 Emo rock or alternative to let it all out
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="motivational" id="motivational" />
+                      <Label htmlFor="motivational" className="flex-1 cursor-pointer">
+                        🎵 Motivational pop to pick yourself back up
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="calming" id="calming" />
+                      <Label htmlFor="calming" className="flex-1 cursor-pointer">
+                        🧘♂️ Calming or meditative music to decompress
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
             )}
@@ -90,16 +144,33 @@ export default function QuestionnairePage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <Label htmlFor="sleep" className="text-base font-semibold mb-4 block">
-                    How many hours did you sleep?
-                  </Label>
-                  <Input id="sleep" type="number" placeholder="8" min="0" max="24" className="text-lg" />
-                </div>
-                <div>
-                  <Label htmlFor="water" className="text-base font-semibold mb-4 block">
-                    Glasses of water consumed
-                  </Label>
-                  <Input id="water" type="number" placeholder="8" min="0" className="text-lg" />
+                  <Label className="text-base font-semibold mb-4 block">You're hitting the gym.</Label>
+                  <RadioGroup value={answers[3]} onValueChange={(value) => setAnswers({ ...answers, 3: value })}>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="hiphop" id="hiphop" />
+                      <Label htmlFor="hiphop" className="flex-1 cursor-pointer">
+                        💪 High-energy hip-hop or rap
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="edm" id="edm" />
+                      <Label htmlFor="edm" className="flex-1 cursor-pointer">
+                        ⚡ EDM or techno with a heavy beat
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="rock" id="rock" />
+                      <Label htmlFor="rock" className="flex-1 cursor-pointer">
+                        🎸 Rock or metal to get pumped
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="pop" id="pop" />
+                      <Label htmlFor="pop" className="flex-1 cursor-pointer">
+                        🎧 Upbeat pop or dance anthems
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
             )}
@@ -107,14 +178,67 @@ export default function QuestionnairePage() {
             {step === 4 && (
               <div className="space-y-6">
                 <div>
-                  <Label htmlFor="notes" className="text-base font-semibold mb-4 block">
-                    Any additional notes about your day?
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Share anything else about your day..."
-                    className="min-h-32 resize-none"
-                  />
+                  <Label className="text-base font-semibold mb-4 block">You just wrapped up a stressful job interview.</Label>
+                  <RadioGroup value={answers[4]} onValueChange={(value) => setAnswers({ ...answers, 4: value })}>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="chillhop" id="chillhop" />
+                      <Label htmlFor="chillhop" className="flex-1 cursor-pointer">
+                        🌿 Chillhop or jazz to wind down
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="ambient-relax" id="ambient-relax" />
+                      <Label htmlFor="ambient-relax" className="flex-1 cursor-pointer">
+                        🧘♀️ Ambient or lo-fi to decompress
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="soft-pop" id="soft-pop" />
+                      <Label htmlFor="soft-pop" className="flex-1 cursor-pointer">
+                        🎶 Soft pop or indie to relax
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="quiet" id="quiet" />
+                      <Label htmlFor="quiet" className="flex-1 cursor-pointer">
+                        🔉 Quiet sounds to reflect
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-base font-semibold mb-4 block">You just received a job offer from a company you really like.</Label>
+                  <RadioGroup value={answers[5]} onValueChange={(value) => setAnswers({ ...answers, 5: value })}>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="upbeat" id="upbeat" />
+                      <Label htmlFor="upbeat" className="flex-1 cursor-pointer">
+                        🎉 Upbeat pop or party anthems
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="throwback" id="throwback" />
+                      <Label htmlFor="throwback" className="flex-1 cursor-pointer">
+                        🕺 Throwback hits that make you dance
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="happy-indie" id="happy-indie" />
+                      <Label htmlFor="happy-indie" className="flex-1 cursor-pointer">
+                        🎶 Happy indie or feel-good folk
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="intense" id="intense" />
+                      <Label htmlFor="intense" className="flex-1 cursor-pointer">
+                        🎧 Intense music as if you're preparing for a challenge
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
             )}
@@ -130,11 +254,23 @@ export default function QuestionnairePage() {
                 onClick={() => {
                   if (step < totalSteps) {
                     setStep(step + 1)
+                  } else {
+                    handleComplete()
                   }
                 }}
+                disabled={isSubmitting}
               >
-                {step === totalSteps ? "Complete" : "Next"}
-                <ChevronRight className="w-4 h-4 ml-2" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    {step === totalSteps ? "Complete" : "Next"}
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
             </div>
           </Card>

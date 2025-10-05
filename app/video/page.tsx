@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Play, Download, X, Loader2 } from "lucide-react"
+import { Play, Download, X, Loader2, Trash2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
 interface ImageItem {
@@ -34,9 +34,54 @@ export default function VideoPage() {
   const [progress, setProgress] = useState(0)
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null)
   const [previousVideos, setPreviousVideos] = useState<Array<{ id: string; url: string; date: string }>>([])
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
   const removeFromTimeline = (id: string) => {
     setTimelineImages((prev) => prev.filter((img) => img.id !== id))
+    setSelectedImages((prev) => {
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+  }
+
+  const toggleSelection = (id: string) => {
+    setSelectedImages((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const deleteSelected = () => {
+    setTimelineImages((prev) => prev.filter((img) => !selectedImages.has(img.id)))
+    setSelectedImages(new Set())
+  }
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedIndex === null || draggedIndex === index) return
+
+    const newImages = [...timelineImages]
+    const draggedImage = newImages[draggedIndex]
+    newImages.splice(draggedIndex, 1)
+    newImages.splice(index, 0, draggedImage)
+
+    setTimelineImages(newImages)
+    setDraggedIndex(index)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
   }
 
   const generateVideo = () => {
@@ -78,7 +123,7 @@ export default function VideoPage() {
               <div className="text-center">
                 <Loader2 className="w-20 h-20 text-primary animate-spin mx-auto mb-6" />
                 <h2 className="text-3xl font-bold text-foreground mb-3">Generating Video</h2>
-                <p className="text-muted-foreground mb-8">Processing your soundtrack...</p>
+                <p className="text-muted-foreground mb-8">Processing your SoundTrack...</p>
                 <Progress value={progress} className="mb-3 h-3" />
                 <p className="text-lg font-semibold text-primary">{progress}%</p>
               </div>
@@ -187,18 +232,31 @@ export default function VideoPage() {
                   <div>
                     <h2 className="text-xl font-bold text-foreground">Timeline</h2>
                     <p className="text-sm text-muted-foreground">
-                      {timelineImages.length} {timelineImages.length === 1 ? "image" : "images"} selected
+                      {timelineImages.length} {timelineImages.length === 1 ? "image" : "images"} total
+                      {selectedImages.size > 0 && ` • ${selectedImages.size} selected`}
                     </p>
                   </div>
-                  <Button
-                    onClick={generateVideo}
-                    disabled={timelineImages.length === 0}
-                    size="lg"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    Generate Video
-                  </Button>
+                  <div className="flex gap-3">
+                    {selectedImages.size > 0 && (
+                      <Button
+                        onClick={deleteSelected}
+                        variant="destructive"
+                        size="lg"
+                      >
+                        <Trash2 className="w-5 h-5 mr-2" />
+                        Delete Selected
+                      </Button>
+                    )}
+                    <Button
+                      onClick={generateVideo}
+                      disabled={timelineImages.length === 0}
+                      size="lg"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      Generate Video
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="relative bg-muted/50 rounded-lg p-4 overflow-x-auto min-h-[120px] border border-border">
@@ -208,23 +266,53 @@ export default function VideoPage() {
                     </div>
                   ) : (
                     <div className="flex gap-3">
-                      {timelineImages.map((image, index) => (
-                        <div
-                          key={`${image.id}-${index}`}
-                          className="relative h-24 w-36 rounded-lg overflow-hidden border-2 border-primary/50 hover:border-primary transition-colors flex-shrink-0 group"
-                        >
-                          <img
-                            src={image.url || "/placeholder.svg"}
-                            alt={image.timestamp}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute bottom-2 left-2 right-2">
-                            <div className="text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded">
-                              {image.timestamp}
+                      {timelineImages.map((image, index) => {
+                        const isSelected = selectedImages.has(image.id)
+                        return (
+                          <div
+                            key={`${image.id}-${index}`}
+                            draggable
+                            onDragStart={() => handleDragStart(index)}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => toggleSelection(image.id)}
+                            className={`relative h-24 w-36 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 cursor-pointer select-none ${
+                              isSelected
+                                ? "border-primary shadow-lg shadow-primary/30 scale-105"
+                                : "border-primary/50 hover:border-primary"
+                            } ${draggedIndex === index ? "opacity-50" : ""}`}
+                          >
+                            <img
+                              src={image.url || "/placeholder.svg"}
+                              alt={image.timestamp}
+                              className="w-full h-full object-cover pointer-events-none"
+                              draggable={false}
+                            />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                                  <svg
+                                    className="w-4 h-4 text-white"
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path d="M5 13l4 4L19 7"></path>
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded">
+                                {image.timestamp}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>

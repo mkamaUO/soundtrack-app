@@ -120,7 +120,7 @@ export default function MusicPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Your Soundtrack</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Your SoundTrack</h1>
             <p className="text-muted-foreground">
               Personalized music recommendations based on your mood and preferences
             </p>

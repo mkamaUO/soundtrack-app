@@ -5,7 +5,7 @@ import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Music, Download, Calendar } from "lucide-react"
+import { Music, Calendar } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const timelineData = [
@@ -84,15 +84,9 @@ export default function TimelinePage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto px-4 pt-20 pb-12">
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-5xl font-bold text-foreground mb-3">Timeline</h1>
-            <p className="text-muted-foreground text-lg">Your day in music and moments</p>
-          </div>
-          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Download className="w-5 h-5 mr-2" />
-            Export
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-5xl font-bold text-foreground mb-3">Timeline</h1>
+          <p className="text-muted-foreground text-lg">Your day in music and moments</p>
         </div>
 
         <Card className="p-6 bg-card border-border mb-12">

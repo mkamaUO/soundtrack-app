@@ -6,7 +6,7 @@ import { ClipboardList, Film, Music, Clock, Activity, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/questionnaire", label: "Questionnaire", icon: ClipboardList },
+  { href: "/questionnaire", label: "Calibration", icon: ClipboardList },
   { href: "/video", label: "Video Playground", icon: Film },
   { href: "/playlist", label: "Playlist", icon: Music },
   { href: "/timeline", label: "Timeline", icon: Clock },
@@ -25,7 +25,7 @@ export function Navigation() {
               <Music className="w-6 h-6 text-white" />
               <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="font-bold text-xl text-gradient">Soundtrack</span>
+            <span className="font-bold text-xl text-gradient">SoundTrack</span>
           </Link>
           <div className="flex items-center gap-1.5">
             {navItems.map((item) => {

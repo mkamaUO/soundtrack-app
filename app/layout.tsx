@@ -18,7 +18,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Soundtrack to Your Life",
+  title: "SoundTrack to Your Life",
   description: "Generate personalized soundtracks based on your biomedical and environmental data",
   generator: "v0.app",
 }

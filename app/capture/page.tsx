@@ -77,7 +77,7 @@ export default function CapturePage() {
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Data Capture</h1>
             <p className="text-muted-foreground">
-              Capture biomedical signals and environmental data to generate your personalized soundtrack
+              Capture biomedical signals and environmental data to generate your personalized SoundTrack
             </p>
           </div>
 

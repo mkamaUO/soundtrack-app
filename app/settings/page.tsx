@@ -39,7 +39,7 @@ export default function SettingsPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Settings</h1>
-            <p className="text-muted-foreground">Customize your Soundtrack to Your Life experience</p>
+            <p className="text-muted-foreground">Customize your SoundTrack to Your Life experience</p>
           </div>
 
           <Tabs defaultValue="capture" className="space-y-6">

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Play, Pause, Heart, MoreVertical } from "lucide-react"
+import { Play, Pause, Heart, MoreVertical, Download } from "lucide-react"
 
 const songs = [
   {
@@ -57,9 +57,15 @@ export default function PlaylistPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto px-4 pt-20 pb-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Your Playlist</h1>
-          <p className="text-muted-foreground">Songs matched to your mood and activities</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Your Playlist</h1>
+            <p className="text-muted-foreground">Songs matched to your mood and activities</p>
+          </div>
+          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Download className="w-5 h-5 mr-2" />
+            Export
+          </Button>
         </div>
 
         <div className="space-y-2">
