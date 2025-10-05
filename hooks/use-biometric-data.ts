@@ -5,12 +5,45 @@ interface EEGChannel {
   channelName: string
 }
 
+interface FrequencyBands {
+  delta: number
+  alpha: number
+  beta: number
+  theta: number
+  alphaMajor: number
+  gamma: number
+  betaMajor: number
+}
+
+interface FrequencyRatios {
+  alphaThetaRatio: number
+  alphaMajorBetaMajorRatio: number
+  thetaBetaRatio: number
+  alphaBetaRatio: number
+  thetaAlphaRatio: number
+}
+
+interface ChannelFrequencyData {
+  frequencyBands: FrequencyBands
+  ratios: FrequencyRatios
+}
+
+interface FrequencyAnalysis {
+  samplesAnalyzed: number
+  hasAnalysis: boolean
+  analysisWindow: number
+  channels: {
+    [key: string]: ChannelFrequencyData
+  }
+}
+
 interface EEGData {
   channels: {
     [key: string]: EEGChannel
   }
   timestamp: string
   samplingRate: number
+  frequencyAnalysis?: FrequencyAnalysis
 }
 
 interface BiometricRecord {
@@ -49,6 +82,22 @@ interface BiometricData {
     channel_1: number
     channel_2: number
     channel_3: number
+  }>
+  frequencyBandData?: Array<{
+    time: string
+    delta: number
+    alpha: number
+    beta: number
+    theta: number
+    gamma: number
+  }>
+  frequencyRatioData?: Array<{
+    time: string
+    alphaThetaRatio: number
+    alphaMajorBetaMajorRatio: number
+    thetaBetaRatio: number
+    alphaBetaRatio: number
+    thetaAlphaRatio: number
   }>
 }
 
@@ -95,13 +144,14 @@ function transformBiometricData(rawData: BiometricRecord[]): BiometricData {
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
 
-  // Transform EEG channel data for the new chart
+  // Transform EEG channel data for the voltage chart
   const channelVoltageData = sortedData.map(record => {
     const timestamp = new Date(record.timestamp)
     const timeString = timestamp.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: false 
+      hour12: false,
+      timeZone: 'UTC'
     })
     
     return {
@@ -113,9 +163,129 @@ function transformBiometricData(rawData: BiometricRecord[]): BiometricData {
     }
   })
 
+  // Transform frequency band data (average across all channels)
+  const recordsWithFrequencyData = sortedData.filter(record => record.eegData.frequencyAnalysis?.hasAnalysis)
+  console.log(`Found ${recordsWithFrequencyData.length} records with frequency analysis out of ${sortedData.length} total records`)
+  
+  const frequencyBandData = recordsWithFrequencyData.map(record => {
+      console.log('Processing frequency data for record:', record.id, record.eegData.frequencyAnalysis)
+      const timestamp = new Date(record.timestamp)
+      const timeString = timestamp.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'UTC'
+      })
+      
+      const channels = record.eegData.frequencyAnalysis?.channels || {}
+      const channelKeys = Object.keys(channels)
+      
+      // Average frequency bands across all channels
+      const avgBands = channelKeys.reduce((acc, channelKey) => {
+        const channel = channels[channelKey]
+        if (channel) {
+          acc.delta += channel.frequencyBands.delta
+          acc.alpha += channel.frequencyBands.alpha
+          acc.beta += channel.frequencyBands.beta
+          acc.theta += channel.frequencyBands.theta
+          acc.gamma += channel.frequencyBands.gamma
+        }
+        return acc
+      }, { delta: 0, alpha: 0, beta: 0, theta: 0, gamma: 0 })
+      
+      // Divide by number of channels to get average
+      const channelCount = channelKeys.length || 1
+      return {
+        time: timeString,
+        delta: avgBands.delta / channelCount,
+        alpha: avgBands.alpha / channelCount,
+        beta: avgBands.beta / channelCount,
+        theta: avgBands.theta / channelCount,
+        gamma: avgBands.gamma / channelCount,
+      }
+    })
+
+  // Transform frequency ratio data (average across all channels)
+  const frequencyRatioData = recordsWithFrequencyData.map(record => {
+      const timestamp = new Date(record.timestamp)
+      const timeString = timestamp.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'UTC'
+      })
+      
+      const channels = record.eegData.frequencyAnalysis?.channels || {}
+      const channelKeys = Object.keys(channels)
+      
+      // Average ratios across all channels
+      const avgRatios = channelKeys.reduce((acc, channelKey) => {
+        const channel = channels[channelKey]
+        if (channel) {
+          acc.alphaThetaRatio += channel.ratios.alphaThetaRatio
+          acc.alphaMajorBetaMajorRatio += channel.ratios.alphaMajorBetaMajorRatio
+          acc.thetaBetaRatio += channel.ratios.thetaBetaRatio
+          acc.alphaBetaRatio += channel.ratios.alphaBetaRatio
+          acc.thetaAlphaRatio += channel.ratios.thetaAlphaRatio
+        }
+        return acc
+      }, { 
+        alphaThetaRatio: 0, 
+        alphaMajorBetaMajorRatio: 0, 
+        thetaBetaRatio: 0, 
+        alphaBetaRatio: 0, 
+        thetaAlphaRatio: 0 
+      })
+      
+      // Calculate ratios manually from frequency band data
+      const avgBands = channelKeys.reduce((acc, channelKey) => {
+        const channel = channels[channelKey]
+        if (channel) {
+          acc.delta += channel.frequencyBands.delta
+          acc.alpha += channel.frequencyBands.alpha
+          acc.beta += channel.frequencyBands.beta
+          acc.theta += channel.frequencyBands.theta
+          acc.gamma += channel.frequencyBands.gamma
+        }
+        return acc
+      }, { delta: 0, alpha: 0, beta: 0, theta: 0, gamma: 0 })
+      
+      // Divide by number of channels to get average
+      const channelCount = channelKeys.length || 1
+      const avgDelta = avgBands.delta / channelCount
+      const avgAlpha = avgBands.alpha / channelCount
+      const avgBeta = avgBands.beta / channelCount
+      const avgTheta = avgBands.theta / channelCount
+      const avgGamma = avgBands.gamma / channelCount
+
+      return {
+        time: timeString,
+        alphaThetaRatio: avgRatios.alphaThetaRatio / channelCount,
+        alphaMajorBetaMajorRatio: avgRatios.alphaMajorBetaMajorRatio / channelCount,
+        thetaBetaRatio: avgRatios.thetaBetaRatio / channelCount,
+        alphaBetaRatio: avgRatios.alphaBetaRatio / channelCount,
+        thetaAlphaRatio: avgRatios.thetaAlphaRatio / channelCount,
+        // Calculate beta/theta ratio for Focus Level (manual calculation)
+        betaThetaRatio: avgTheta > 0 ? avgBeta / avgTheta : 0,
+        // Calculate beta/alpha ratio for Anxiety Level (manual calculation)
+        betaAlphaRatio: avgAlpha > 0 ? avgBeta / avgAlpha : 0,
+      }
+    })
+
+  console.log('Transformed data summary:', {
+    totalRecords: rawData.length,
+    voltageDataPoints: channelVoltageData.length,
+    frequencyBandDataPoints: frequencyBandData.length,
+    frequencyRatioDataPoints: frequencyRatioData.length,
+    sampleFrequencyData: frequencyBandData.slice(0, 2),
+    sampleRatioData: frequencyRatioData.slice(0, 2)
+  })
+
   return {
     rawBiometricData: rawData,
     channelVoltageData: channelVoltageData,
+    frequencyBandData: frequencyBandData,
+    frequencyRatioData: frequencyRatioData,
     // Keep the existing mock data structure for other charts
     eegData: undefined,
     ecgData: undefined,
