@@ -46,6 +46,7 @@ export default function PlaylistPage() {
               day: "numeric",
               hour: "numeric",
               minute: "2-digit",
+              timeZone: "America/New_York",
             })
 
             const moodColors = getMoodColors(item.user_mood)

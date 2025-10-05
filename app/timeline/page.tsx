@@ -17,14 +17,13 @@ export default function TimelinePage() {
   const [playingId, setPlayingId] = useState<string | null>(null)
 
   useEffect(() => {
-    // Set default start and end dates to cover all data
-    if (mediaData.length > 0) {
-      const firstDate = new Date(mediaData[0].created_at)
-      const lastDate = new Date(mediaData[mediaData.length - 1].created_at)
-      setStartDateTime(firstDate.toISOString().slice(0, 16))
-      setEndDateTime(lastDate.toISOString().slice(0, 16))
-    }
-  }, [mediaData])
+    // Set default start and end dates: Oct 3 12AM to Oct 6 12AM EST
+    const startDate = new Date('2025-10-03T00:00:00-04:00') // Oct 3, 2025 12:00 AM EST
+    const endDate = new Date('2025-10-06T00:00:00-04:00')   // Oct 6, 2025 12:00 AM EST
+
+    setStartDateTime(startDate.toISOString().slice(0, 16))
+    setEndDateTime(endDate.toISOString().slice(0, 16))
+  }, [])
 
   const filteredData = mediaData.filter((item) => {
     if (!startDateTime || !endDateTime) return true
@@ -93,6 +92,7 @@ export default function TimelinePage() {
                 day: "numeric",
                 hour: "numeric",
                 minute: "2-digit",
+                timeZone: "America/New_York",
               })
 
               // Truncate summary to 150 characters
