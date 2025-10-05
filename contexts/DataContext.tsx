@@ -78,6 +78,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Biometric data is optional
       if (biometricResponse && biometricResponse.ok) {
         const biometric: BiometricData[] = await biometricResponse.json()
+        console.log('Raw biometric data from API:', biometric)
         setBiometricData(biometric)
       }
     } catch (err) {

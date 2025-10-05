@@ -3,9 +3,10 @@
 import { Navigation } from "@/components/navigation"
 import { Card } from "@/components/ui/card"
 import { Activity, Brain, Zap, Loader2, AlertCircle, Moon, Waves, Target, AlertTriangle } from "lucide-react"
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
+import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useBiometricData } from "@/hooks/use-biometric-data"
+import { useData } from "@/contexts/DataContext"
 
 const eegData = [
   { time: "6:00", alpha: 8.2, beta: 15.3, theta: 5.1, delta: 2.3 },
@@ -85,16 +86,34 @@ const happinessData = [
 
 export default function BiometricsPage() {
   const { data, loading, error } = useBiometricData()
+  const { mediaData } = useData()
 
   // Use API data if available, otherwise fall back to mock data
-  const currentEegData = data?.eegData || eegData
-  const currentEcgData = data?.ecgData || ecgData
-  const currentFocusData = data?.focusData || focusData
-  const currentHappinessData = data?.happinessData || happinessData
-  const currentChannelVoltageData = data?.channelVoltageData || []
+  // Limit all data to last 50 points for better performance and readability
+  const currentEegData = (data?.eegData || eegData).slice(-50)
+  const currentEcgData = (data?.ecgData || ecgData).slice(-50)
+  const currentFocusData = (data?.focusData || focusData).slice(-50)
+  const currentHappinessData = (data?.happinessData || happinessData).slice(-50)
+  const currentChannelVoltageData = (data?.channelVoltageData || []).slice(-50)
   // Use API data if available, otherwise show empty arrays (charts will be empty)
-  const currentFrequencyBandData = data?.frequencyBandData || []
-  const currentFrequencyRatioData = data?.frequencyRatioData || []
+  const currentFrequencyBandData = (data?.frequencyBandData || []).slice(-50)
+  const currentFrequencyRatioData = (data?.frequencyRatioData || []).slice(-50)
+
+  // Process mood data for pie chart
+  const moodCounts = mediaData.reduce((acc, item) => {
+    const mood = item.user_mood
+    acc[mood] = (acc[mood] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  const pieChartData = Object.entries(moodCounts).map(([mood, count]) => ({
+    name: mood,
+    value: count,
+    percentage: ((count / mediaData.length) * 100).toFixed(1)
+  }))
+
+  // Colors for different moods
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316']
   
   // Log data availability for debugging
   console.log('Chart data availability:', {
@@ -146,7 +165,12 @@ export default function BiometricsPage() {
           <p className="text-muted-foreground">Your health data throughout the day</p>
         </div>
 
-        {/* Mental State Level Graphs */}
+        {/* Mood Levels */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-4">Mood Levels</h2>
+          <p className="text-muted-foreground mb-6">Real-time analysis of your emotional and mental states</p>
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="p-6 bg-card border-border">
             <div className="flex items-center gap-2 mb-4">
@@ -317,8 +341,97 @@ export default function BiometricsPage() {
           </Card>
         </div>
 
+        {/* Mood Distribution */}
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold text-foreground mb-2">Mood Distribution</h2>
+          <p className="text-muted-foreground mb-4">Distribution of moods across all your captured moments</p>
+        </div>
+        
+        <div className="mb-6">
+          <Card className="p-4 bg-card border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4 text-purple-400" />
+              <h2 className="text-lg font-semibold text-foreground">Mood Analysis</h2>
+            </div>
+
+            {pieChartData.length > 0 ? (
+              <div className="flex flex-col lg:flex-row items-center gap-4">
+                <div className="w-full lg:w-1/2">
+                  <ChartContainer
+                    config={pieChartData.reduce((acc, item) => {
+                      acc[item.name] = {
+                        label: item.name,
+                        color: COLORS[pieChartData.indexOf(item) % COLORS.length]
+                      }
+                      return acc
+                    }, {} as Record<string, { label: string; color: string }>)}
+                    className="h-[300px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percentage }) => `${name} (${percentage}%)`}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          formatter={(value, name) => [value, name]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </div>
+                
+                <div className="w-full lg:w-1/2">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Mood Breakdown</h3>
+                    {pieChartData.map((item, index) => (
+                      <div key={item.name} className="flex items-center justify-between p-1.5 rounded bg-muted/50">
+                        <div className="flex items-center gap-1.5">
+                          <div 
+                            className="w-2.5 h-2.5 rounded-full" 
+                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          />
+                          <span className="text-xs font-medium text-foreground capitalize">{item.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-semibold text-foreground">{item.value}</div>
+                          <div className="text-xs text-muted-foreground">{item.percentage}%</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="text-sm">No mood data available</div>
+                  <div className="text-xs mt-1">Mood data will appear when you capture moments</div>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+
         {/* Technical EEG Data */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-4">Technical EEG Data</h2>
+          <p className="text-muted-foreground mb-6">Raw brain wave frequencies and technical measurements</p>
+        </div>
+        
+        {/* First row: Brain Waves and Frequency Ratios */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <Card className="p-6 bg-card border-border">
             <div className="flex items-center gap-2 mb-4">
               <Brain className="w-5 h-5 text-secondary" />
@@ -446,12 +559,16 @@ export default function BiometricsPage() {
               </div>
             )}
           </Card>
+        </div>
 
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Brain className="w-5 h-5 text-purple-400" />
-              <h2 className="text-xl font-semibold text-foreground">EEG - Channel Voltages</h2>
-            </div>
+        {/* Second row: Channel Voltages (centered) */}
+        <div className="flex justify-center mb-6">
+          <div className="w-full max-w-4xl">
+            <Card className="p-6 bg-card border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <Brain className="w-5 h-5 text-purple-400" />
+                <h2 className="text-xl font-semibold text-foreground">EEG - Channel Voltages</h2>
+              </div>
 
             <div className="grid grid-cols-4 gap-2 mb-4">
               <div className="text-center">
@@ -494,36 +611,48 @@ export default function BiometricsPage() {
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
-          </Card>
+            </Card>
+          </div>
+        </div>
 
+        {/* Individual Frequency Bands */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-4">Individual Frequency Bands</h2>
+          <p className="text-muted-foreground mb-6">Individual brain wave frequency band analysis</p>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6 bg-card border-border">
             <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-blue-400" />
-              <h2 className="text-xl font-semibold text-foreground">Alpha/Theta Ratio</h2>
+              <Brain className="w-5 h-5 text-blue-400" />
+              <h2 className="text-xl font-semibold text-foreground">Alpha Waves</h2>
             </div>
 
-            {currentFrequencyRatioData.length > 0 ? (
+            {currentFrequencyBandData.length > 0 ? (
               <ChartContainer
                 config={{
-                  alphaThetaRatio: {
-                    label: "α/θ",
+                  alpha: {
+                    label: "Alpha (8-12 Hz)",
                     color: "rgb(96, 165, 250)",
                   },
                 }}
                 className="h-[250px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentFrequencyRatioData}>
+                  <LineChart data={currentFrequencyBandData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent />} 
+                      formatter={(value, name) => [Number(value).toFixed(6), name]}
+                    />
                     <Line
                       type="monotone"
-                      dataKey="alphaThetaRatio"
-                      stroke="var(--color-alphaThetaRatio)"
+                      dataKey="alpha"
+                      stroke="var(--color-alpha)"
                       strokeWidth={3}
-                      dot={{ fill: "var(--color-alphaThetaRatio)", r: 4 }}
+                      dot={{ fill: "var(--color-alpha)", r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -531,7 +660,7 @@ export default function BiometricsPage() {
             ) : (
               <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <div className="text-sm">No alpha/theta ratio data available</div>
+                  <div className="text-sm">No alpha wave data available</div>
                   <div className="text-xs mt-1">Data will appear when frequency analysis is performed</div>
                 </div>
               </div>
@@ -540,32 +669,35 @@ export default function BiometricsPage() {
 
           <Card className="p-6 bg-card border-border">
             <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-green-400" />
-              <h2 className="text-xl font-semibold text-foreground">Alpha/Beta Ratio</h2>
+              <Brain className="w-5 h-5 text-green-400" />
+              <h2 className="text-xl font-semibold text-foreground">Beta Waves</h2>
             </div>
 
-            {currentFrequencyRatioData.length > 0 ? (
+            {currentFrequencyBandData.length > 0 ? (
               <ChartContainer
                 config={{
-                  alphaBetaRatio: {
-                    label: "α/β",
+                  beta: {
+                    label: "Beta (13-30 Hz)",
                     color: "rgb(74, 222, 128)",
                   },
                 }}
                 className="h-[250px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentFrequencyRatioData}>
+                  <LineChart data={currentFrequencyBandData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent />} 
+                      formatter={(value, name) => [Number(value).toFixed(6), name]}
+                    />
                     <Line
                       type="monotone"
-                      dataKey="alphaBetaRatio"
-                      stroke="var(--color-alphaBetaRatio)"
+                      dataKey="beta"
+                      stroke="var(--color-beta)"
                       strokeWidth={3}
-                      dot={{ fill: "var(--color-alphaBetaRatio)", r: 4 }}
+                      dot={{ fill: "var(--color-beta)", r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -573,7 +705,7 @@ export default function BiometricsPage() {
             ) : (
               <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <div className="text-sm">No alpha/beta ratio data available</div>
+                  <div className="text-sm">No beta wave data available</div>
                   <div className="text-xs mt-1">Data will appear when frequency analysis is performed</div>
                 </div>
               </div>
@@ -582,32 +714,35 @@ export default function BiometricsPage() {
 
           <Card className="p-6 bg-card border-border">
             <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-yellow-400" />
-              <h2 className="text-xl font-semibold text-foreground">Theta/Beta Ratio</h2>
+              <Brain className="w-5 h-5 text-yellow-400" />
+              <h2 className="text-xl font-semibold text-foreground">Theta Waves</h2>
             </div>
 
-            {currentFrequencyRatioData.length > 0 ? (
+            {currentFrequencyBandData.length > 0 ? (
               <ChartContainer
                 config={{
-                  thetaBetaRatio: {
-                    label: "θ/β",
+                  theta: {
+                    label: "Theta (4-8 Hz)",
                     color: "rgb(250, 204, 21)",
                   },
                 }}
                 className="h-[250px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentFrequencyRatioData}>
+                  <LineChart data={currentFrequencyBandData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent />} 
+                      formatter={(value, name) => [Number(value).toFixed(6), name]}
+                    />
                     <Line
                       type="monotone"
-                      dataKey="thetaBetaRatio"
-                      stroke="var(--color-thetaBetaRatio)"
+                      dataKey="theta"
+                      stroke="var(--color-theta)"
                       strokeWidth={3}
-                      dot={{ fill: "var(--color-thetaBetaRatio)", r: 4 }}
+                      dot={{ fill: "var(--color-theta)", r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -615,7 +750,7 @@ export default function BiometricsPage() {
             ) : (
               <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <div className="text-sm">No theta/beta ratio data available</div>
+                  <div className="text-sm">No theta wave data available</div>
                   <div className="text-xs mt-1">Data will appear when frequency analysis is performed</div>
                 </div>
               </div>
@@ -624,74 +759,35 @@ export default function BiometricsPage() {
 
           <Card className="p-6 bg-card border-border">
             <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-purple-400" />
-              <h2 className="text-xl font-semibold text-foreground">Alpha Major/Beta Major Ratio</h2>
+              <Brain className="w-5 h-5 text-red-400" />
+              <h2 className="text-xl font-semibold text-foreground">Delta Waves</h2>
             </div>
 
-            {currentFrequencyRatioData.length > 0 ? (
+            {currentFrequencyBandData.length > 0 ? (
               <ChartContainer
                 config={{
-                  alphaMajorBetaMajorRatio: {
-                    label: "αM/βM",
-                    color: "rgb(168, 85, 247)",
-                  },
-                }}
-                className="h-[250px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentFrequencyRatioData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      type="monotone"
-                      dataKey="alphaMajorBetaMajorRatio"
-                      stroke="var(--color-alphaMajorBetaMajorRatio)"
-                      strokeWidth={3}
-                      dot={{ fill: "var(--color-alphaMajorBetaMajorRatio)", r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <div className="text-sm">No alpha major/beta major ratio data available</div>
-                  <div className="text-xs mt-1">Data will appear when frequency analysis is performed</div>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-red-400" />
-              <h2 className="text-xl font-semibold text-foreground">Theta/Alpha Ratio</h2>
-            </div>
-
-            {currentFrequencyRatioData.length > 0 ? (
-              <ChartContainer
-                config={{
-                  thetaAlphaRatio: {
-                    label: "θ/α",
+                  delta: {
+                    label: "Delta (0.5-4 Hz)",
                     color: "rgb(248, 113, 113)",
                   },
                 }}
                 className="h-[250px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentFrequencyRatioData}>
+                  <LineChart data={currentFrequencyBandData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent />} 
+                      formatter={(value, name) => [Number(value).toFixed(6), name]}
+                    />
                     <Line
                       type="monotone"
-                      dataKey="thetaAlphaRatio"
-                      stroke="var(--color-thetaAlphaRatio)"
+                      dataKey="delta"
+                      stroke="var(--color-delta)"
                       strokeWidth={3}
-                      dot={{ fill: "var(--color-thetaAlphaRatio)", r: 4 }}
+                      dot={{ fill: "var(--color-delta)", r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -699,7 +795,52 @@ export default function BiometricsPage() {
             ) : (
               <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <div className="text-sm">No theta/alpha ratio data available</div>
+                  <div className="text-sm">No delta wave data available</div>
+                  <div className="text-xs mt-1">Data will appear when frequency analysis is performed</div>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-6 bg-card border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-5 h-5 text-purple-400" />
+              <h2 className="text-xl font-semibold text-foreground">Gamma Waves</h2>
+            </div>
+
+            {currentFrequencyBandData.length > 0 ? (
+              <ChartContainer
+                config={{
+                  gamma: {
+                    label: "Gamma (30+ Hz)",
+                    color: "rgb(168, 85, 247)",
+                  },
+                }}
+                className="h-[250px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={currentFrequencyBandData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent />} 
+                      formatter={(value, name) => [Number(value).toFixed(6), name]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="gamma"
+                      stroke="var(--color-gamma)"
+                      strokeWidth={3}
+                      dot={{ fill: "var(--color-gamma)", r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="text-sm">No gamma wave data available</div>
                   <div className="text-xs mt-1">Data will appear when frequency analysis is performed</div>
                 </div>
               </div>
