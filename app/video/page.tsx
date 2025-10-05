@@ -4,24 +4,10 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Play, Download, X, Loader2, Trash2 } from "lucide-react"
+import { Play, Download, X, Loader2, Trash2, RefreshCw } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { getMoodColors } from "@/lib/mood-colors"
-
-interface MediaItem {
-  id: string
-  type: string
-  storage_url: string
-  thumb_url: string | null
-  summary: string
-  mood: string
-  song: string
-  song_artist: string
-  embed: string
-  user_mood: string
-  created_at: string
-  ts: string
-}
+import { useData } from "@/contexts/DataContext"
 
 interface ImageItem {
   id: string
@@ -29,48 +15,29 @@ interface ImageItem {
   timestamp: string
 }
 
-type GenerationState = "idle" | "generating" | "complete"
-
 export default function VideoPage() {
-  const [mediaData, setMediaData] = useState<MediaItem[]>([])
+  const { mediaData, isLoading, videoGeneration, setVideoGeneration, refetchData } = useData()
   const [timelineImages, setTimelineImages] = useState<ImageItem[]>([])
-  const [generationState, setGenerationState] = useState<GenerationState>("idle")
-  const [progress, setProgress] = useState(0)
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null)
   const [previousVideos, setPreviousVideos] = useState<Array<{ id: string; url: string; date: string }>>([])
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const response = await fetch("https://htv2025-production.up.railway.app/api/media/ordered/created-at")
-        const data: MediaItem[] = await response.json()
-        setMediaData(data)
+    // Convert media data to timeline images
+    const images: ImageItem[] = mediaData.map((item) => ({
+      id: item.id,
+      url: item.storage_url,
+      timestamp: new Date(item.created_at).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    }))
 
-        // Convert media data to timeline images
-        const images: ImageItem[] = data.map((item) => ({
-          id: item.id,
-          url: item.storage_url,
-          timestamp: new Date(item.created_at).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          }),
-        }))
-
-        setTimelineImages(images)
-      } catch (error) {
-        console.error("Failed to fetch media:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchMedia()
-  }, [])
+    setTimelineImages(images)
+  }, [mediaData])
 
   const removeFromTimeline = (id: string) => {
     setTimelineImages((prev) => prev.filter((img) => img.id !== id))
@@ -120,8 +87,7 @@ export default function VideoPage() {
   }
 
   const generateVideo = async () => {
-    setGenerationState("generating")
-    setProgress(0)
+    setVideoGeneration({ state: "generating", progress: 0, videoUrl: null })
 
     try {
       // Extract media IDs from timelineImages
@@ -146,36 +112,38 @@ export default function VideoPage() {
 
       // Simulate progress for better UX
       const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
+        setVideoGeneration((prev) => {
+          if (prev.progress >= 100) {
             clearInterval(interval)
-            setGenerationState("complete")
-            setGeneratedVideoUrl(data.video_url || data.url || "/video-thumb-today.jpg")
+            const videoUrl = data.video_url || data.url || "/video-thumb-today.jpg"
             setPreviousVideos((prev) => [
               {
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                url: data.video_url || data.url || "/video-thumb-today.jpg",
+                url: videoUrl,
                 date: new Date().toLocaleDateString(),
               },
               ...prev,
             ])
-            return 100
+            return { state: "complete", progress: 100, videoUrl }
           }
-          return prev + 5
+          return { ...prev, progress: prev.progress + 5 }
         })
       }, 200)
     } catch (error) {
       console.error("Error generating video:", error)
-      setGenerationState("idle")
-      setProgress(0)
+      setVideoGeneration({ state: "idle", progress: 0, videoUrl: null })
     }
   }
 
   const resetVideo = () => {
-    setGenerationState("idle")
-    setProgress(0)
-    setGeneratedVideoUrl(null)
+    setVideoGeneration({ state: "idle", progress: 0, videoUrl: null })
     setSelectedImages(new Set())
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refetchData()
+    setIsRefreshing(false)
   }
 
   return (
@@ -183,21 +151,21 @@ export default function VideoPage() {
       <Navigation />
 
       <main className="flex-1 flex flex-col pt-14">
-        {generationState === "generating" && (
+        {videoGeneration.state === "generating" && (
           <div className="flex-1 flex items-center justify-center p-8">
             <Card className="p-12 bg-card border-border max-w-md w-full">
               <div className="text-center">
                 <Loader2 className="w-20 h-20 text-primary animate-spin mx-auto mb-6" />
                 <h2 className="text-3xl font-bold text-foreground mb-3">Generating Video</h2>
                 <p className="text-muted-foreground mb-8">Processing your SoundTrack...</p>
-                <Progress value={progress} className="mb-3 h-3" />
-                <p className="text-lg font-semibold text-primary">{progress}%</p>
+                <Progress value={videoGeneration.progress} className="mb-3 h-3" />
+                <p className="text-lg font-semibold text-primary">{videoGeneration.progress}%</p>
               </div>
             </Card>
           </div>
         )}
 
-        {generationState === "complete" && generatedVideoUrl && (
+        {videoGeneration.state === "complete" && videoGeneration.videoUrl && (
           <div className="flex-1 p-8">
             <div className="max-w-5xl mx-auto">
               <div className="mb-8 flex items-center justify-between">
@@ -216,7 +184,7 @@ export default function VideoPage() {
               <Card className="p-6 bg-card border-border mb-12">
                 <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
                   <video
-                    src={generatedVideoUrl || ""}
+                    src={videoGeneration.videoUrl || ""}
                     controls
                     autoPlay
                     className="w-full h-full object-contain"
@@ -229,13 +197,25 @@ export default function VideoPage() {
           </div>
         )}
 
-        {generationState === "idle" && (
+        {videoGeneration.state === "idle" && (
           <>
             <div className="flex-1 p-8 overflow-y-auto">
               <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                  <h2 className="text-4xl font-bold text-foreground mb-2">Video Playground</h2>
-                  <p className="text-muted-foreground text-lg">Remove any images you don't want in your video</p>
+                <div className="mb-8 flex items-start justify-between">
+                  <div>
+                    <h2 className="text-4xl font-bold text-foreground mb-2">Video Playground</h2>
+                    <p className="text-muted-foreground text-lg">Remove any images you don't want in your video</p>
+                  </div>
+                  <Button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    variant="outline"
+                    size="lg"
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`} />
+                    Refresh Media
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-5 gap-6">

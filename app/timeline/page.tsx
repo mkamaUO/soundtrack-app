@@ -8,50 +8,23 @@ import { Label } from "@/components/ui/label"
 import { Music, Loader2, Play } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { getMoodColors } from "@/lib/mood-colors"
-
-interface MediaItem {
-  id: string
-  type: string
-  storage_url: string
-  summary: string
-  mood: string
-  song: string
-  song_artist: string
-  embed: string
-  user_mood: string
-  created_at: string
-}
+import { useData } from "@/contexts/DataContext"
 
 export default function TimelinePage() {
-  const [mediaData, setMediaData] = useState<MediaItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { mediaData, isLoading } = useData()
   const [startDateTime, setStartDateTime] = useState("")
   const [endDateTime, setEndDateTime] = useState("")
   const [playingId, setPlayingId] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const response = await fetch("https://htv2025-production.up.railway.app/api/media/ordered/created-at")
-        const data: MediaItem[] = await response.json()
-        setMediaData(data)
-
-        // Set default start and end dates to cover all data
-        if (data.length > 0) {
-          const firstDate = new Date(data[0].created_at)
-          const lastDate = new Date(data[data.length - 1].created_at)
-          setStartDateTime(firstDate.toISOString().slice(0, 16))
-          setEndDateTime(lastDate.toISOString().slice(0, 16))
-        }
-      } catch (error) {
-        console.error("Failed to fetch media:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    // Set default start and end dates to cover all data
+    if (mediaData.length > 0) {
+      const firstDate = new Date(mediaData[0].created_at)
+      const lastDate = new Date(mediaData[mediaData.length - 1].created_at)
+      setStartDateTime(firstDate.toISOString().slice(0, 16))
+      setEndDateTime(lastDate.toISOString().slice(0, 16))
     }
-
-    fetchMedia()
-  }, [])
+  }, [mediaData])
 
   const filteredData = mediaData.filter((item) => {
     if (!startDateTime || !endDateTime) return true

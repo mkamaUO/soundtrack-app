@@ -1,44 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Download, Loader2, Play } from "lucide-react"
 import { getMoodColors } from "@/lib/mood-colors"
-
-interface MediaItem {
-  id: string
-  type: string
-  storage_url: string
-  summary: string
-  mood: string
-  song: string
-  song_artist: string
-  embed: string
-  user_mood: string
-  created_at: string
-}
+import { useData } from "@/contexts/DataContext"
 
 export default function PlaylistPage() {
-  const [mediaData, setMediaData] = useState<MediaItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const response = await fetch("https://htv2025-production.up.railway.app/api/media/ordered/created-at")
-        const data: MediaItem[] = await response.json()
-        setMediaData(data)
-      } catch (error) {
-        console.error("Failed to fetch media:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchMedia()
-  }, [])
+  const { mediaData, isLoading } = useData()
 
   if (isLoading) {
     return (
