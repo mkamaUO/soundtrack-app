@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Play, Download, X, Loader2, Trash2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { getMoodColors } from "@/lib/mood-colors"
 
 interface MediaItem {
   id: string
@@ -242,6 +243,8 @@ export default function VideoPage() {
                         ? mediaItem.summary.substring(0, 100) + "..."
                         : mediaItem?.summary || ""
 
+                    const moodColors = mediaItem ? getMoodColors(mediaItem.user_mood) : null
+
                     return (
                       <div
                         key={image.id}
@@ -260,9 +263,9 @@ export default function VideoPage() {
                         </button>
                         {/* Hover overlay with emotion and summary */}
                         <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center">
-                          {mediaItem && (
+                          {mediaItem && moodColors && (
                             <>
-                              <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-semibold inline-block mb-3 w-fit">
+                              <span className={`text-xs px-2 py-1 rounded-full ${moodColors.bg} ${moodColors.text} border ${moodColors.border} font-semibold inline-block mb-3 w-fit`}>
                                 {mediaItem.user_mood}
                               </span>
                               <p className="text-xs text-white leading-relaxed">{truncatedSummary}</p>

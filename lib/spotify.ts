@@ -26,6 +26,33 @@ interface SpotifyRecommendationsParams {
 }
 
 /**
+ * Generate Spotify OAuth authorization URL
+ */
+export function getSpotifyAuthUrl(): string {
+  const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "your-client-id"
+  const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || "http://localhost:3000/api/auth/spotify/callback"
+
+  const scopes = [
+    "user-read-private",
+    "user-read-email",
+    "playlist-modify-public",
+    "playlist-modify-private",
+    "user-library-read",
+    "user-library-modify",
+  ].join(" ")
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: "code",
+    redirect_uri: redirectUri,
+    scope: scopes,
+    show_dialog: "true",
+  })
+
+  return `https://accounts.spotify.com/authorize?${params.toString()}`
+}
+
+/**
  * Get Spotify access token using client credentials flow
  */
 export async function getSpotifyAccessToken(): Promise<string> {

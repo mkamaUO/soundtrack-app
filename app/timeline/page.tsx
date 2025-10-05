@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Music, Loader2, Play } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { getMoodColors } from "@/lib/mood-colors"
 
 interface MediaItem {
   id: string
@@ -125,6 +126,8 @@ export default function TimelinePage() {
               const truncatedSummary =
                 item.summary.length > 150 ? item.summary.substring(0, 150) + "..." : item.summary
 
+              const moodColors = getMoodColors(item.user_mood)
+
               return (
                 <div key={item.id} className="relative">
                   <div className="absolute left-1/2 top-0 -translate-x-1/2 flex flex-col items-center z-10">
@@ -147,7 +150,7 @@ export default function TimelinePage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                              <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold inline-block mb-2">
+                              <span className={`text-xs px-3 py-1 rounded-full ${moodColors.bg} ${moodColors.text} border ${moodColors.border} font-semibold inline-block mb-2`}>
                                 {item.user_mood}
                               </span>
                             </div>

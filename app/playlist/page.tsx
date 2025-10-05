@@ -5,6 +5,7 @@ import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Download, Loader2, Play } from "lucide-react"
+import { getMoodColors } from "@/lib/mood-colors"
 
 interface MediaItem {
   id: string
@@ -77,13 +78,15 @@ export default function PlaylistPage() {
               minute: "2-digit",
             })
 
+            const moodColors = getMoodColors(item.user_mood)
+
             return (
               <Card key={item.id} className="p-6 bg-card border-border">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-sm font-semibold text-primary">{timestamp}</span>
-                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                      <span className={`text-sm px-3 py-1.5 rounded-full ${moodColors.bg} ${moodColors.text} border ${moodColors.border} font-semibold`}>
                         {item.user_mood}
                       </span>
                     </div>
