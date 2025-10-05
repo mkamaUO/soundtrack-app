@@ -2,9 +2,10 @@
 
 import { Navigation } from "@/components/navigation"
 import { Card } from "@/components/ui/card"
-import { Activity, Heart, Brain, Zap } from "lucide-react"
+import { Activity, Heart, Brain, Zap, Loader2, AlertCircle } from "lucide-react"
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { useBiometricData } from "@/hooks/use-biometric-data"
 
 const eegData = [
   { time: "6:00", alpha: 8.2, beta: 15.3, theta: 5.1, delta: 2.3 },
@@ -83,9 +84,50 @@ const happinessData = [
 ]
 
 export default function BiometricsPage() {
-  const avgHeartRate = Math.round(ecgData.reduce((sum, d) => sum + d.bpm, 0) / ecgData.length)
-  const maxHeartRate = Math.max(...ecgData.map((d) => d.bpm))
-  const minHeartRate = Math.min(...ecgData.map((d) => d.bpm))
+  const { data, loading, error } = useBiometricData()
+
+  // Use API data if available, otherwise fall back to mock data
+  const currentEegData = data?.eegData || eegData
+  const currentEcgData = data?.ecgData || ecgData
+  const currentFocusData = data?.focusData || focusData
+  const currentHappinessData = data?.happinessData || happinessData
+  const currentChannelVoltageData = data?.channelVoltageData || []
+
+  const avgHeartRate = Math.round(currentEcgData.reduce((sum, d) => sum + d.bpm, 0) / currentEcgData.length)
+  const maxHeartRate = Math.max(...currentEcgData.map((d) => d.bpm))
+  const minHeartRate = Math.min(...currentEcgData.map((d) => d.bpm))
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 pt-20 pb-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="text-muted-foreground">Loading biometric data...</span>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 pt-20 pb-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-6 h-6" />
+              <span>Error loading biometric data: {error}</span>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,7 +170,7 @@ export default function BiometricsPage() {
               className="h-[200px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={ecgData}>
+                <LineChart data={currentEcgData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[50, 85]} />
@@ -174,7 +216,7 @@ export default function BiometricsPage() {
               className="h-[200px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={eegData}>
+                <LineChart data={currentEegData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -183,6 +225,55 @@ export default function BiometricsPage() {
                   <Line type="monotone" dataKey="beta" stroke="var(--color-beta)" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="theta" stroke="var(--color-theta)" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="delta" stroke="var(--color-delta)" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </Card>
+
+          <Card className="p-6 bg-card border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-5 h-5 text-purple-400" />
+              <h2 className="text-xl font-semibold text-foreground">EEG - Channel Voltages</h2>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground">O1</div>
+                <div className="text-sm font-bold text-blue-400">Voltage</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground">O2</div>
+                <div className="text-sm font-bold text-green-400">Voltage</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground">T3</div>
+                <div className="text-sm font-bold text-yellow-400">Voltage</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground">T4</div>
+                <div className="text-sm font-bold text-red-400">Voltage</div>
+              </div>
+            </div>
+
+            <ChartContainer
+              config={{
+                channel_0: { label: "O1", color: "rgb(96, 165, 250)" },
+                channel_1: { label: "O2", color: "rgb(74, 222, 128)" },
+                channel_2: { label: "T3", color: "rgb(250, 204, 21)" },
+                channel_3: { label: "T4", color: "rgb(248, 113, 113)" },
+              }}
+              className="h-[200px]"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentChannelVoltageData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line type="monotone" dataKey="channel_0" stroke="var(--color-channel_0)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="channel_1" stroke="var(--color-channel_1)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="channel_2" stroke="var(--color-channel_2)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="channel_3" stroke="var(--color-channel_3)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -204,7 +295,7 @@ export default function BiometricsPage() {
               className="h-[250px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={focusData}>
+                <LineChart data={currentFocusData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, 100]} />
@@ -237,7 +328,7 @@ export default function BiometricsPage() {
               className="h-[250px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={happinessData}>
+                <LineChart data={currentHappinessData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, 100]} />
