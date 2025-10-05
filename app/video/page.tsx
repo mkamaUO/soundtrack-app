@@ -119,25 +119,56 @@ export default function VideoPage() {
     setDraggedIndex(null)
   }
 
-  const generateVideo = () => {
+  const generateVideo = async () => {
     setGenerationState("generating")
     setProgress(0)
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setGenerationState("complete")
-          setGeneratedVideoUrl("/video-thumb-today.jpg")
-          setPreviousVideos((prev) => [
-            { id: Date.now().toString(), url: "/video-thumb-today.jpg", date: new Date().toLocaleDateString() },
-            ...prev,
-          ])
-          return 100
-        }
-        return prev + 5
+    try {
+      // Extract media IDs from timelineImages
+      const mediaIds = timelineImages.map((image) => image.id)
+
+      // Call the video generation API
+      const response = await fetch("https://htv2025-production.up.railway.app/api/video/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          media_ids: mediaIds,
+        }),
       })
-    }, 200)
+
+      if (!response.ok) {
+        throw new Error("Failed to generate video")
+      }
+
+      const data = await response.json()
+
+      // Simulate progress for better UX
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval)
+            setGenerationState("complete")
+            setGeneratedVideoUrl(data.video_url || data.url || "/video-thumb-today.jpg")
+            setPreviousVideos((prev) => [
+              {
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                url: data.video_url || data.url || "/video-thumb-today.jpg",
+                date: new Date().toLocaleDateString(),
+              },
+              ...prev,
+            ])
+            return 100
+          }
+          return prev + 5
+        })
+      }, 200)
+    } catch (error) {
+      console.error("Error generating video:", error)
+      setGenerationState("idle")
+      setProgress(0)
+    }
   }
 
   const resetVideo = () => {
@@ -184,44 +215,16 @@ export default function VideoPage() {
 
               <Card className="p-6 bg-card border-border mb-12">
                 <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
-                  <img
-                    src={generatedVideoUrl || "/placeholder.svg"}
-                    alt="Generated video"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Button size="lg" className="rounded-full w-20 h-20 bg-primary hover:bg-primary/90">
-                      <Play className="w-10 h-10" />
-                    </Button>
-                  </div>
+                  <video
+                    src={generatedVideoUrl || ""}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               </Card>
-
-              {previousVideos.length > 0 && (
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground mb-6">Previous Videos</h3>
-                  <div className="grid grid-cols-3 gap-6">
-                    {previousVideos.map((video) => (
-                      <Card
-                        key={video.id}
-                        className="p-4 bg-card border-border group cursor-pointer hover:border-primary transition-colors"
-                      >
-                        <div className="aspect-video bg-black rounded-lg overflow-hidden mb-3 relative">
-                          <img
-                            src={video.url || "/placeholder.svg"}
-                            alt="Previous video"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Play className="w-12 h-12 text-white" />
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{video.date}</p>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
