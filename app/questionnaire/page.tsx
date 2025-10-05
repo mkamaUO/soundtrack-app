@@ -47,8 +47,8 @@ export default function QuestionnairePage() {
         throw new Error("Failed to submit questionnaire")
       }
 
-      // Redirect to playlist page on success
-      router.push("/playlist")
+      // Redirect to timeline page on success
+      router.push("/timeline")
     } catch (error) {
       console.error("Error submitting questionnaire:", error)
       alert("Failed to submit questionnaire. Please try again.")
@@ -58,47 +58,66 @@ export default function QuestionnairePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background gradient-mesh">
       <Navigation />
       <main className="container mx-auto px-4 pt-20 pb-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Calibration</h1>
-            <p className="text-muted-foreground">Imagine you are in the following scenario. What kind of music would you want to listen to?</p>
-            <div className="flex gap-2 mt-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Calibration</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Imagine you are in the following scenario. What kind of music would you want to listen to?
+            </p>
+            <div className="flex gap-2 mt-6 max-w-md mx-auto">
               {Array.from({ length: totalSteps }).map((_, i) => (
-                <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? "bg-primary" : "bg-muted"}`} />
+                <div key={i} className={`h-2 flex-1 rounded-full transition-all ${i < step ? "bg-primary" : "bg-muted"}`} />
               ))}
             </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Question {step} of {totalSteps}
+            </p>
           </div>
 
-          <Card className="p-6 bg-card border-border">
+          <Card className="p-8 bg-card/80 backdrop-blur border-border shadow-xl">
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">You want to lock-in on your homework.</Label>
+                  <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
+                    You want to lock-in on your homework.
+                  </h2>
                   <RadioGroup value={answers[1]} onValueChange={(value) => setAnswers({ ...answers, 1: value })}>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="lofi" id="lofi" />
-                      <Label htmlFor="lofi" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 1: "lofi" })}
+                    >
+                      <RadioGroupItem value="lofi" id="lofi" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="lofi" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎧 Lo-fi beats or instrumental chillhop
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="classical" id="classical" />
-                      <Label htmlFor="classical" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 1: "classical" })}
+                    >
+                      <RadioGroupItem value="classical" id="classical" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="classical" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎻 Classical or piano music
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="ambient" id="ambient" />
-                      <Label htmlFor="ambient" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 1: "ambient" })}
+                    >
+                      <RadioGroupItem value="ambient" id="ambient" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="ambient" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎶 Ambient or focus-enhancing electronic
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="silence" id="silence" />
-                      <Label htmlFor="silence" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 1: "silence" })}
+                    >
+                      <RadioGroupItem value="silence" id="silence" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="silence" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🔇 Silence or white noise (no music)
                       </Label>
                     </div>
@@ -110,29 +129,43 @@ export default function QuestionnairePage() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">You got back your exam mark and it was lower than expected.</Label>
+                  <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
+                    You got back your exam mark and it was lower than expected.
+                  </h2>
                   <RadioGroup value={answers[2]} onValueChange={(value) => setAnswers({ ...answers, 2: value })}>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="sad" id="sad" />
-                      <Label htmlFor="sad" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 2: "sad" })}
+                    >
+                      <RadioGroupItem value="sad" id="sad" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="sad" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         😔 Sad indie or acoustic to match the mood
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="emo" id="emo" />
-                      <Label htmlFor="emo" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 2: "emo" })}
+                    >
+                      <RadioGroupItem value="emo" id="emo" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="emo" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎸 Emo rock or alternative to let it all out
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="motivational" id="motivational" />
-                      <Label htmlFor="motivational" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 2: "motivational" })}
+                    >
+                      <RadioGroupItem value="motivational" id="motivational" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="motivational" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎵 Motivational pop to pick yourself back up
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="calming" id="calming" />
-                      <Label htmlFor="calming" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 2: "calming" })}
+                    >
+                      <RadioGroupItem value="calming" id="calming" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="calming" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🧘♂️ Calming or meditative music to decompress
                       </Label>
                     </div>
@@ -144,29 +177,41 @@ export default function QuestionnairePage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">You're hitting the gym.</Label>
+                  <h2 className="text-2xl font-bold text-foreground mb-6 text-center">You're hitting the gym.</h2>
                   <RadioGroup value={answers[3]} onValueChange={(value) => setAnswers({ ...answers, 3: value })}>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="hiphop" id="hiphop" />
-                      <Label htmlFor="hiphop" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 3: "hiphop" })}
+                    >
+                      <RadioGroupItem value="hiphop" id="hiphop" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="hiphop" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         💪 High-energy hip-hop or rap
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="edm" id="edm" />
-                      <Label htmlFor="edm" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 3: "edm" })}
+                    >
+                      <RadioGroupItem value="edm" id="edm" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="edm" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         ⚡ EDM or techno with a heavy beat
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="rock" id="rock" />
-                      <Label htmlFor="rock" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 3: "rock" })}
+                    >
+                      <RadioGroupItem value="rock" id="rock" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="rock" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎸 Rock or metal to get pumped
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="pop" id="pop" />
-                      <Label htmlFor="pop" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 3: "pop" })}
+                    >
+                      <RadioGroupItem value="pop" id="pop" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="pop" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎧 Upbeat pop or dance anthems
                       </Label>
                     </div>
@@ -178,29 +223,43 @@ export default function QuestionnairePage() {
             {step === 4 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">You just wrapped up a stressful job interview.</Label>
+                  <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
+                    You just wrapped up a stressful job interview.
+                  </h2>
                   <RadioGroup value={answers[4]} onValueChange={(value) => setAnswers({ ...answers, 4: value })}>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="chillhop" id="chillhop" />
-                      <Label htmlFor="chillhop" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 4: "chillhop" })}
+                    >
+                      <RadioGroupItem value="chillhop" id="chillhop" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="chillhop" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🌿 Chillhop or jazz to wind down
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="ambient-relax" id="ambient-relax" />
-                      <Label htmlFor="ambient-relax" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 4: "ambient-relax" })}
+                    >
+                      <RadioGroupItem value="ambient-relax" id="ambient-relax" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="ambient-relax" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🧘♀️ Ambient or lo-fi to decompress
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="soft-pop" id="soft-pop" />
-                      <Label htmlFor="soft-pop" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 4: "soft-pop" })}
+                    >
+                      <RadioGroupItem value="soft-pop" id="soft-pop" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="soft-pop" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎶 Soft pop or indie to relax
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="quiet" id="quiet" />
-                      <Label htmlFor="quiet" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 4: "quiet" })}
+                    >
+                      <RadioGroupItem value="quiet" id="quiet" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="quiet" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🔉 Quiet sounds to reflect
                       </Label>
                     </div>
@@ -212,29 +271,43 @@ export default function QuestionnairePage() {
             {step === 5 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-base font-semibold mb-4 block">You just received a job offer from a company you really like.</Label>
+                  <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
+                    You just received a job offer from a company you really like.
+                  </h2>
                   <RadioGroup value={answers[5]} onValueChange={(value) => setAnswers({ ...answers, 5: value })}>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="upbeat" id="upbeat" />
-                      <Label htmlFor="upbeat" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 5: "upbeat" })}
+                    >
+                      <RadioGroupItem value="upbeat" id="upbeat" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="upbeat" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎉 Upbeat pop or party anthems
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="throwback" id="throwback" />
-                      <Label htmlFor="throwback" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 5: "throwback" })}
+                    >
+                      <RadioGroupItem value="throwback" id="throwback" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="throwback" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🕺 Throwback hits that make you dance
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="happy-indie" id="happy-indie" />
-                      <Label htmlFor="happy-indie" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 5: "happy-indie" })}
+                    >
+                      <RadioGroupItem value="happy-indie" id="happy-indie" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="happy-indie" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎶 Happy indie or feel-good folk
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="intense" id="intense" />
-                      <Label htmlFor="intense" className="flex-1 cursor-pointer">
+                    <div
+                      className="flex items-center space-x-4 p-5 rounded-xl bg-muted/30 hover:bg-primary/10 border-2 border-muted hover:border-primary/40 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      onClick={() => setAnswers({ ...answers, 5: "intense" })}
+                    >
+                      <RadioGroupItem value="intense" id="intense" className="w-6 h-6 border-2 border-white bg-white pointer-events-none" />
+                      <Label htmlFor="intense" className="flex-1 cursor-pointer text-base font-medium pointer-events-none">
                         🎧 Intense music as if you're preparing for a challenge
                       </Label>
                     </div>

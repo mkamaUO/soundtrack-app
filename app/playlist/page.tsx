@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Download, Loader2 } from "lucide-react"
+import { Download, Loader2, Play } from "lucide-react"
 
 interface MediaItem {
   id: string
@@ -56,10 +56,16 @@ export default function PlaylistPage() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Your Playlist</h1>
             <p className="text-muted-foreground">Songs matched to your mood and activities</p>
           </div>
-          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Download className="w-5 h-5 mr-2" />
-            Export
-          </Button>
+          <div className="flex gap-3">
+            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Play className="w-5 h-5 mr-2" />
+              Play All
+            </Button>
+            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Download className="w-5 h-5 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-4">

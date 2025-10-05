@@ -235,27 +235,46 @@ export default function VideoPage() {
                 </div>
 
                 <div className="grid grid-cols-5 gap-6">
-                  {timelineImages.map((image) => (
-                    <div
-                      key={image.id}
-                      className="relative aspect-square rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors group"
-                    >
-                      <img
-                        src={image.url || "/placeholder.svg"}
-                        alt={image.timestamp}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() => removeFromTimeline(image.id)}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:scale-110"
+                  {timelineImages.map((image) => {
+                    const mediaItem = mediaData.find((item) => item.id === image.id)
+                    const truncatedSummary =
+                      mediaItem && mediaItem.summary.length > 100
+                        ? mediaItem.summary.substring(0, 100) + "..."
+                        : mediaItem?.summary || ""
+
+                    return (
+                      <div
+                        key={image.id}
+                        className="relative aspect-square rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-colors group"
                       >
-                        <X className="w-5 h-5" />
-                      </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3">
-                        <p className="text-sm font-medium text-white">{image.timestamp}</p>
+                        <img
+                          src={image.url || "/placeholder.svg"}
+                          alt={image.timestamp}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={() => removeFromTimeline(image.id)}
+                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:scale-110 z-10"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                        {/* Hover overlay with emotion and summary */}
+                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-center">
+                          {mediaItem && (
+                            <>
+                              <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-semibold inline-block mb-3 w-fit">
+                                {mediaItem.user_mood}
+                              </span>
+                              <p className="text-xs text-white leading-relaxed">{truncatedSummary}</p>
+                            </>
+                          )}
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3">
+                          <p className="text-sm font-medium text-white">{image.timestamp}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>

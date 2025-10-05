@@ -5,7 +5,7 @@ import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Music, Loader2 } from "lucide-react"
+import { Music, Loader2, Play } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 interface MediaItem {
@@ -26,6 +26,7 @@ export default function TimelinePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [startDateTime, setStartDateTime] = useState("")
   const [endDateTime, setEndDateTime] = useState("")
+  const [playingId, setPlayingId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -135,7 +136,7 @@ export default function TimelinePage() {
 
                   <div className={`flex ${isLeft ? "justify-start pr-[56%]" : "justify-end pl-[56%]"}`}>
                     <Card className="p-6 bg-card border-border w-full hover:border-primary/50 transition-colors">
-                      <div className="flex gap-5">
+                      <div className="flex gap-5 mb-4">
                         <div className="w-28 h-28 rounded-lg overflow-hidden flex-shrink-0 border-2 border-primary/20">
                           <img
                             src={item.storage_url || "/placeholder.svg"}
@@ -150,6 +151,14 @@ export default function TimelinePage() {
                                 {item.user_mood}
                               </span>
                             </div>
+                            <Button
+                              size="sm"
+                              className="bg-primary text-primary-foreground hover:bg-primary/90"
+                              onClick={() => setPlayingId(playingId === item.id ? null : item.id)}
+                            >
+                              <Play className="w-4 h-4 mr-1" />
+                              {playingId === item.id ? "Hide" : "Play"}
+                            </Button>
                           </div>
                           <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{truncatedSummary}</p>
                           <div className="flex items-center gap-3 text-sm">
@@ -160,6 +169,19 @@ export default function TimelinePage() {
                           </div>
                         </div>
                       </div>
+                      {playingId === item.id && (
+                        <div className="w-full">
+                          <iframe
+                            src={item.embed}
+                            width="100%"
+                            height="80"
+                            frameBorder="0"
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                            loading="lazy"
+                            className="rounded-lg"
+                          />
+                        </div>
+                      )}
                     </Card>
                   </div>
                 </div>
