@@ -4,6 +4,7 @@ import { Space_Grotesk, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { DataProvider } from "@/contexts/DataContext"
+import { RealtimePlayer } from "@/components/realtime-player"
 import "./globals.css"
 
 const spaceGrotesk = Space_Grotesk({
@@ -35,6 +36,7 @@ export default function RootLayout({
         <DataProvider>
           <Suspense fallback={<div>Loading...</div>}>
             {children}
+            <RealtimePlayer />
             <Analytics />
           </Suspense>
         </DataProvider>
