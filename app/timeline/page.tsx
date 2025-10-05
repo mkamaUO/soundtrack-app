@@ -1,84 +1,73 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Music, Calendar } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Music, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
-const timelineData = [
-  {
-    time: "6:00 AM",
-    hour: 6,
-    title: "Morning Routine",
-    mood: "Energized",
-    songs: ["Sunrise Melody", "Morning Coffee Jazz"],
-    summary: "Started the day with a refreshing walk and meditation session.",
-    image: "/video-thumb-morning.jpg",
-  },
-  {
-    time: "9:00 AM",
-    hour: 9,
-    title: "Work Focus",
-    mood: "Focused",
-    songs: ["Deep Work", "Concentration Flow"],
-    summary: "High productivity session with deep focus on project tasks.",
-    image: "/video-thumb-afternoon.jpg",
-  },
-  {
-    time: "12:00 PM",
-    hour: 12,
-    title: "Lunch Break",
-    mood: "Relaxed",
-    songs: ["Midday Chill", "Peaceful Pause"],
-    summary: "Enjoyed a healthy lunch and short walk outside.",
-    image: "/captured-moment-.jpg",
-  },
-  {
-    time: "3:00 PM",
-    hour: 15,
-    title: "Afternoon Session",
-    mood: "Motivated",
-    songs: ["Afternoon Energy", "Creative Boost"],
-    summary: "Collaborative meetings and creative brainstorming.",
-    image: "/video-thumb-afternoon.jpg",
-  },
-  {
-    time: "6:00 PM",
-    hour: 18,
-    title: "Evening Wind Down",
-    mood: "Calm",
-    songs: ["Sunset Vibes", "Evening Reflection"],
-    summary: "Wrapped up work and transitioned to personal time.",
-    image: "/video-thumb-evening.jpg",
-  },
-  {
-    time: "9:00 PM",
-    hour: 21,
-    title: "Night Routine",
-    mood: "Peaceful",
-    songs: ["Night Meditation", "Sleep Preparation"],
-    summary: "Relaxing evening with reading and light stretching.",
-    image: "/video-thumb-today.jpg",
-  },
-]
-
-const timeOptions = Array.from({ length: 24 }, (_, i) => ({
-  value: i.toString(),
-  label: `${i.toString().padStart(2, "0")}:00`,
-}))
+interface MediaItem {
+  id: string
+  type: string
+  storage_url: string
+  summary: string
+  mood: string
+  song: string
+  song_artist: string
+  embed: string
+  user_mood: string
+  created_at: string
+}
 
 export default function TimelinePage() {
-  const [startTime, setStartTime] = useState("6")
-  const [endTime, setEndTime] = useState("21")
+  const [mediaData, setMediaData] = useState<MediaItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [startDateTime, setStartDateTime] = useState("")
+  const [endDateTime, setEndDateTime] = useState("")
 
-  const filteredData = timelineData.filter((item) => {
-    const startHour = Number.parseInt(startTime)
-    const endHour = Number.parseInt(endTime)
-    return item.hour >= startHour && item.hour <= endHour
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        const response = await fetch("https://htv2025-production.up.railway.app/api/media/ordered/created-at")
+        const data: MediaItem[] = await response.json()
+        setMediaData(data)
+
+        // Set default start and end dates to cover all data
+        if (data.length > 0) {
+          const firstDate = new Date(data[0].created_at)
+          const lastDate = new Date(data[data.length - 1].created_at)
+          setStartDateTime(firstDate.toISOString().slice(0, 16))
+          setEndDateTime(lastDate.toISOString().slice(0, 16))
+        }
+      } catch (error) {
+        console.error("Failed to fetch media:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMedia()
+  }, [])
+
+  const filteredData = mediaData.filter((item) => {
+    if (!startDateTime || !endDateTime) return true
+
+    const itemDate = new Date(item.created_at)
+    const start = new Date(startDateTime)
+    const end = new Date(endDateTime)
+
+    return itemDate >= start && itemDate <= end
   })
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,49 +75,35 @@ export default function TimelinePage() {
       <main className="container mx-auto px-4 pt-20 pb-12">
         <div className="mb-8">
           <h1 className="text-5xl font-bold text-foreground mb-3">Timeline</h1>
-          <p className="text-muted-foreground text-lg">Your day in music and moments</p>
+          <p className="text-muted-foreground text-lg">Your moments in music and memories</p>
         </div>
 
         <Card className="p-6 bg-card border-border mb-12">
-          <div className="flex items-end gap-6">
-            <div className="flex-1">
-              <Label htmlFor="start-time" className="text-sm mb-3 block font-semibold">
-                Start Time
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="start-datetime" className="text-sm mb-3 block font-semibold">
+                Start Date & Time
               </Label>
-              <Select value={startTime} onValueChange={setStartTime}>
-                <SelectTrigger id="start-time" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="start-datetime"
+                type="datetime-local"
+                value={startDateTime}
+                onChange={(e) => setStartDateTime(e.target.value)}
+                className="w-full"
+              />
             </div>
-            <div className="flex-1">
-              <Label htmlFor="end-time" className="text-sm mb-3 block font-semibold">
-                End Time
+            <div>
+              <Label htmlFor="end-datetime" className="text-sm mb-3 block font-semibold">
+                End Date & Time
               </Label>
-              <Select value={endTime} onValueChange={setEndTime}>
-                <SelectTrigger id="end-time" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="end-datetime"
+                type="datetime-local"
+                value={endDateTime}
+                onChange={(e) => setEndDateTime(e.target.value)}
+                className="w-full"
+              />
             </div>
-            <Button variant="outline" size="lg">
-              <Calendar className="w-5 h-5 mr-2" />
-              Today
-            </Button>
           </div>
         </Card>
 
@@ -138,13 +113,23 @@ export default function TimelinePage() {
           <div className="space-y-16">
             {filteredData.map((item, index) => {
               const isLeft = index % 2 === 0
+              const timestamp = new Date(item.created_at).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })
+
+              // Truncate summary to 150 characters
+              const truncatedSummary =
+                item.summary.length > 150 ? item.summary.substring(0, 150) + "..." : item.summary
 
               return (
-                <div key={index} className="relative">
+                <div key={item.id} className="relative">
                   <div className="absolute left-1/2 top-0 -translate-x-1/2 flex flex-col items-center z-10">
                     <div className="w-5 h-5 rounded-full bg-primary border-4 border-background shadow-lg shadow-primary/50" />
                     <span className="text-base font-bold text-foreground mt-3 bg-card px-4 py-2 rounded-lg border border-border">
-                      {item.time}
+                      {timestamp}
                     </span>
                   </div>
 
@@ -153,24 +138,25 @@ export default function TimelinePage() {
                       <div className="flex gap-5">
                         <div className="w-28 h-28 rounded-lg overflow-hidden flex-shrink-0 border-2 border-primary/20">
                           <img
-                            src={item.image || "/placeholder.svg"}
-                            alt={item.title}
+                            src={item.storage_url || "/placeholder.svg"}
+                            alt={item.song}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h3 className="font-bold text-xl text-foreground mb-2">{item.title}</h3>
-                              <span className="text-sm px-3 py-1 rounded-full bg-secondary/20 text-secondary font-semibold inline-block">
-                                {item.mood}
+                            <div className="flex-1">
+                              <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold inline-block mb-2">
+                                {item.user_mood}
                               </span>
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{item.summary}</p>
+                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{truncatedSummary}</p>
                           <div className="flex items-center gap-3 text-sm">
                             <Music className="w-5 h-5 text-primary flex-shrink-0" />
-                            <span className="text-foreground font-medium">{item.songs.join(" • ")}</span>
+                            <span className="text-foreground font-medium">
+                              {item.song} • {item.song_artist}
+                            </span>
                           </div>
                         </div>
                       </div>

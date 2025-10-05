@@ -1,11 +1,26 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Play, Download, X, Loader2, Trash2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+
+interface MediaItem {
+  id: string
+  type: string
+  storage_url: string
+  thumb_url: string | null
+  summary: string
+  mood: string
+  song: string
+  song_artist: string
+  embed: string
+  user_mood: string
+  created_at: string
+  ts: string
+}
 
 interface ImageItem {
   id: string
@@ -13,29 +28,48 @@ interface ImageItem {
   timestamp: string
 }
 
-const sampleImages: ImageItem[] = [
-  { id: "1", url: "/video-thumb-morning.jpg", timestamp: "6:00 AM" },
-  { id: "2", url: "/video-thumb-afternoon.jpg", timestamp: "7:30 AM" },
-  { id: "3", url: "/captured-moment-.jpg", timestamp: "9:15 AM" },
-  { id: "4", url: "/video-thumb-evening.jpg", timestamp: "11:00 AM" },
-  { id: "5", url: "/video-thumb-today.jpg", timestamp: "12:30 PM" },
-  { id: "6", url: "/calm-music-album.jpg", timestamp: "2:00 PM" },
-  { id: "7", url: "/classical-piano-album.jpg", timestamp: "3:45 PM" },
-  { id: "8", url: "/electronic-chill-album.jpg", timestamp: "5:00 PM" },
-  { id: "9", url: "/sunset-music-album.jpg", timestamp: "6:30 PM" },
-  { id: "10", url: "/piano-peaceful-album.jpg", timestamp: "8:00 PM" },
-]
-
 type GenerationState = "idle" | "generating" | "complete"
 
 export default function VideoPage() {
-  const [timelineImages, setTimelineImages] = useState<ImageItem[]>(sampleImages)
+  const [mediaData, setMediaData] = useState<MediaItem[]>([])
+  const [timelineImages, setTimelineImages] = useState<ImageItem[]>([])
   const [generationState, setGenerationState] = useState<GenerationState>("idle")
   const [progress, setProgress] = useState(0)
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null)
   const [previousVideos, setPreviousVideos] = useState<Array<{ id: string; url: string; date: string }>>([])
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        const response = await fetch("https://htv2025-production.up.railway.app/api/media/ordered/created-at")
+        const data: MediaItem[] = await response.json()
+        setMediaData(data)
+
+        // Convert media data to timeline images
+        const images: ImageItem[] = data.map((item) => ({
+          id: item.id,
+          url: item.storage_url,
+          timestamp: new Date(item.created_at).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+        }))
+
+        setTimelineImages(images)
+      } catch (error) {
+        console.error("Failed to fetch media:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMedia()
+  }, [])
 
   const removeFromTimeline = (id: string) => {
     setTimelineImages((prev) => prev.filter((img) => img.id !== id))
@@ -109,7 +143,7 @@ export default function VideoPage() {
     setGenerationState("idle")
     setProgress(0)
     setGeneratedVideoUrl(null)
-    setTimelineImages(sampleImages)
+    setSelectedImages(new Set())
   }
 
   return (
